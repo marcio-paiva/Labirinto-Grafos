@@ -1,29 +1,83 @@
 import time
-from busca import BuscaLargura, BuscaProfundidade
+from collections import deque
 
-def ler_labirinto(arquivo):
-    with open(arquivo, 'r') as f:
-        labirinto = [list(linha.strip()) for linha in f.readlines()]
+def lerLabirinto(arquivo):
+    with open(arquivo, 'r') as file:
+        labirinto = [list(linha.strip()) for linha in file.readlines()]
     return labirinto
 
-def construir_lista_adjacencia(labirinto):
-    lista_adj = {}
-    for i in range(len(labirinto)):
-        for j in range(len(labirinto[0])):
-            if labirinto[i][j] != '#':
-                lista_adj[(i, j)] = []
-                for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                    ni, nj = i + dx, j + dy
-                    if 0 <= ni < len(labirinto) and 0 <= nj < len(labirinto[0]) and labirinto[ni][nj] != '#':
-                        lista_adj[(i, j)].append((ni, nj))
-    return lista_adj
-
-def encontrar_posicao(labirinto, char):
+def encontrarPosicao(labirinto, char):
     for i, linha in enumerate(labirinto):
-        for j, c in enumerate(linha):
-            if c == char:
-                return i, j
+        for j, celula in enumerate(linha):
+            if celula == char:
+                return (i, j)
     return None
+
+def construirListaAdjacencia(labirinto):
+    adj = {}
+    for i, linha in enumerate(labirinto):
+        for j, celula in enumerate(linha):
+            if celula != '#':
+                adj[(i, j)] = []
+                for di, dj in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                    ni, nj = i + di, j + dj
+                    if 0 <= ni < len(labirinto) and 0 <= nj < len(labirinto[0]) and labirinto[ni][nj] != '#':
+                        adj[(i, j)].append((ni, nj))
+    return adj
+
+def buscaLargura(adj, inicio, fim):
+    queue = deque([inicio])
+    visited = set([inicio])
+    parent = {inicio: None}
+    pontosVisitados = [inicio]
+
+    while queue:
+        atual = queue.popleft()
+        if atual == fim:
+            break
+        for vizinho in adj[atual]:
+            if vizinho not in visited:
+                queue.append(vizinho)
+                visited.add(vizinho)
+                parent[vizinho] = atual
+                pontosVisitados.append(vizinho)
+
+    path = []
+    passo = fim
+    while passo:
+        path.append(passo)
+        passo = parent.get(passo)
+    path.reverse()
+    return path if path and path[0] == inicio else None, pontosVisitados
+
+def buscaProfundidade(adj, inicio, fim):
+    stack = [inicio]
+    visited = set([inicio])
+    parent = {inicio: None}
+    pontosVisitados = [inicio]
+
+    while stack:
+        atual = stack[-1]  
+        if atual == fim:
+            break
+        
+        for vizinho in adj[atual]:
+            if vizinho not in visited:
+                stack.append(vizinho)
+                visited.add(vizinho)
+                parent[vizinho] = atual
+                pontosVisitados.append(vizinho)
+                break
+        else:
+            stack.pop()
+
+    path = []
+    passo = fim
+    while passo:
+        path.append(passo)
+        passo = parent.get(passo)
+    path.reverse()
+    return path if path and path[0] == inicio else None, pontosVisitados
 
 def main():
     while True:
@@ -32,40 +86,52 @@ def main():
             break
 
         try:
-            labirinto = ler_labirinto(arquivo)
-            inicio = encontrar_posicao(labirinto, 'S')
-            fim = encontrar_posicao(labirinto, 'E')
+            labirintoLargura = lerLabirinto(arquivo)
+            labirintoProfundidade = lerLabirinto(arquivo)
+
+            inicio = encontrarPosicao(labirintoLargura, 'S')
+            fim = encontrarPosicao(labirintoLargura, 'E')
 
             if not inicio or not fim:
-                print("Labirinto inválido. Certifique-se de que há um 'S' e um 'E' no labirinto.")
+                print("Labirinto invalido. Certifique-se de que há um 'S' e um 'E' no labirinto.")
                 continue
 
-            lista_adj = construir_lista_adjacencia(labirinto)
+            listaAdjLargura = construirListaAdjacencia(labirintoLargura)
+            listaAdjProfundidade = construirListaAdjacencia(labirintoProfundidade)
 
             while True:
-                metodo = input("Escolha o método:\n 1 para Busca em largura\n 2 para Busca em profundidade\n 0 para sair0: ")
+                metodo = input("Escolha o metodo:\n 1 para Busca em Largura\n 2 para Busca em Profundidade\n 0 para sair: ")
                 if metodo == '0':
                     break
                 elif metodo == '1':
-                    start_time = time.time()
-                    caminho = BuscaLargura(lista_adj, inicio, fim)
-                    end_time = time.time()
+                    startTime = time.time()
+                    caminhoLargura, pontosVisitadosLargura = buscaLargura(listaAdjLargura, inicio, fim)
+                    endTime = time.time()
+                    if caminhoLargura:
+                        print("\nCaminho:", ' '.join(map(str, caminhoLargura)))
+                    else:
+                        print("Nenhum caminho encontrado pela Busca em Largura.")
+                    print("\nPontos visitados pela Busca em Largura:", pontosVisitadosLargura)
+                    print("\nTempo:", endTime - startTime, "s\n")
                 elif metodo == '2':
-                    start_time = time.time()
-                    caminho = BuscaProfundidade(lista_adj, inicio, fim)
-                    end_time = time.time()
+                    startTime = time.time()
+                    caminhoProfundidade, pontosVisitadosProfundidade = buscaProfundidade(listaAdjProfundidade, inicio, fim)
+                    endTime = time.time()
+                    if caminhoProfundidade:
+                        print("\nCaminho:", ' '.join(map(str, caminhoProfundidade)))
+
+                    else:
+                        print("Nenhum caminho encontrado pela Busca em Profundidade.")
+                    print("\nPontos visitados pela Busca em Profundidade:", pontosVisitadosProfundidade)
+                    print("\nTempo:", endTime - startTime, "s\n")
                 else:
-                    print("Método inválido. Escolha 1 para BFS ou 2 para DFS.")
+                    print("Metodo invalido. Escolha 1 para Largura ou 2 para Profundidade.")
                     continue
 
-                if caminho:
-                    print("Caminho:", ' '.join(map(str, caminho)))
-                else:
-                    print("Nenhum caminho encontrado.")
-                print("Tempo:", end_time - start_time, "s")
-
         except FileNotFoundError:
-            print("Arquivo não encontrado. Tente novamente.")
+            print("Arquivo nao encontrado. Tente novamente.")
+        except Exception as e:
+            print(f"Ocorreu um erro: {e}")
 
 if __name__ == "__main__":
     main()
