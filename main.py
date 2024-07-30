@@ -38,7 +38,7 @@ def buscaLargura(adj, inicio, fim):
         for vizinho in adj[atual]:
             if vizinho not in visited:
                 queue.append(vizinho)
-                visited.add(vizinho)
+                visited.add(vizinho) #teste
                 parent[vizinho] = atual
                 pontosVisitados.append(vizinho)
 
